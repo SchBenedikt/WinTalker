@@ -1,13 +1,27 @@
 import tkinter as tk
+import sys
 from tkinter import simpledialog
+sys.path.append('commands')
+sys.path.append('commands/open_app')
 import dark_mode
 import light_mode
 import screenshot
 import open_word
+import open_powerpoint
+import open_excel
+
+def show_help():
+    help_message = "Available commands:\n\n"
+    help_message += "'dark mode': Change the default Windows mode to Dark Mode.\n"
+    help_message += "'light mode': Change the default Windows mode to Light Mode.\n"
+    help_message += "'screenshot': Take a screenshot of the desktop.\n"
+    help_message += "'word': Open Microsoft Word.\n"
+    help_message += "'help': Show this help message."
+    tk.messagebox.showinfo("Windows Talker Help", help_message)
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.title("Windows Tuner")
+    root.title("Windows Talker")
     root.geometry("400x300")
 
     def on_command_entry(event=None):
@@ -20,6 +34,12 @@ if __name__ == "__main__":
             screenshot.take_screenshot()
         elif user_input.lower() == "word":
             open_word.open_microsoft_word()
+        elif user_input.lower() == "powerpoint":
+            open_powerpoint.open_microsoft_powerpoint()
+        elif user_input.lower() == "excel":
+            open_excel.open_microsoft_excel()
+        elif user_input.lower() == "help":
+            show_help()
         else:
             tk.messagebox.showinfo("Invalid Command", "Invalid command. Type 'help' for available commands.")
         command_entry.delete(0, tk.END)
@@ -33,5 +53,7 @@ if __name__ == "__main__":
     command_entry = tk.Entry(root, font=("Arial", 12))
     command_entry.bind("<Return>", on_command_entry)
     command_entry.pack(pady=10)
+
+    command_entry.focus_set()  # Setze den Fokus auf das Eingabefeld
 
     root.mainloop()
