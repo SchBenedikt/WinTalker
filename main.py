@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, simpledialog
+import platform
 import sys
+import sv_ttk
 sys.path.append('commands')
 sys.path.append('commands/open_app')
 import dark_mode
@@ -26,40 +28,57 @@ import ctypes
 import requests
 import re
 from tkinter import messagebox
+import sv_ttk
 import tldextract
 import threading
 import pystray
 from datetime import datetime
 from datetime import datetime as dt
 import pyttsx3
-
+import time
+import winsound
+import pygame
 sys.path.append('commands')
+sys.path.append('command_input')
 sys.path.append('commands/open_app')
 
-# Map command keywords to the corresponding functions
-command_map = {
-    'dark mode': dark_mode.enable_dark_mode,
-    'heller modus': light_mode.enable_light_mode,
-    'light mode': light_mode.enable_light_mode,
-    'screenshot': screenshot.take_screenshot,
-    'system info': system_info.show_system_info,
-    'shutdown': shutdown.shutdown_computer,
-    'restart': restart.restart_computer,
-    'word': open_word.open_microsoft_word,
-    'edge': open_msedge.open_msedge,
-    'chrome': open_chrome.open_chrome,
-    'teams': open_msteams.open_msteams,
-    'powerpoint': open_powerpoint.open_microsoft_powerpoint,
-    'excel': open_excel.open_microsoft_excel,
-    'explorer': open_explorer.open_explorer,
-    'taskmanager': open_taskmanager.open_windows_taskmanager,
-    'transparency on': enable_transparency.enable_transparency,
-    'transparency off': disable_transparency.disable_transparency,
-}
 
-def show_help():
-    help_url = "https://github.com/SchBenedikt/WinTalker/wiki/Commands"
-    webbrowser.open(help_url)
+def load_command_map(language):
+    command_map = {}
+    file_paths = ["command_input/german.txt", "command_input/english.txt"]
+    for file_path in file_paths:
+        with open(file_path, "r", encoding="utf-8") as file:
+            for line in file:
+                line = line.strip()
+                if line:
+                    keyword, function_name = line.split(":")
+                    command_map[keyword.strip()] = eval(function_name.strip())
+    return command_map
+
+# Laden Sie die Befehlszuordnungen für die ausgewählte Sprache
+language = "german"  # Oder "english" je nach Bedarf
+command_map = load_command_map(language)
+
+
+def start_timer(duration):
+    try:
+        duration = int(duration)
+        if duration <= 0:
+            print("Bitte geben Sie eine positive Zahl für die Dauer des Timers ein.")
+            return
+        duration *= 60  # Convert minutes to seconds
+        print(f"Timer für {duration // 60} Minuten gestartet.")
+        time.sleep(duration)
+        print("Timer abgelaufen!")
+        # Play background music for 5 seconds
+        pygame.mixer.init()
+        pygame.mixer.music.load("background-music-for-trailer-amp-shorts-184413.mp3")
+        pygame.mixer.music.play()
+        time.sleep(5)
+        pygame.mixer.music.stop()
+    except ValueError:
+        print("Bitte geben Sie eine gültige Zahl für die Dauer des Timers ein.")
+
 
 def execute_command(user_input):
     domain = get_domain(user_input)
@@ -70,6 +89,9 @@ def execute_command(user_input):
     if domain:
         search_url = f"https://{domain}"
         webbrowser.open(search_url)
+    if "timer" in user_input.lower():
+        duration = user_input.lower().replace("timer", "").strip()
+        start_timer(duration)
     else:
         matched_commands = []
         for command_keyword, command_function in command_map.items():
@@ -109,13 +131,13 @@ def open_search_confirmation(search_url):
     def cancel_search():
         confirmation_dialog.destroy()
 
-    search_button = tk.Button(confirmation_dialog, text="Search Online", command=perform_search)
+    search_button = ttk.Button(confirmation_dialog, text="Search Online", command=perform_search, style='Modern.TButton')
     search_button.pack(side=tk.LEFT, padx=10, pady=10)
 
-    specific_website_button = tk.Button(confirmation_dialog, text="Open Github", command=open_specific_website)
+    specific_website_button = ttk.Button(confirmation_dialog, text="Open Github", command=open_specific_website, style='Modern.TButton')
     specific_website_button.pack(side=tk.LEFT, padx=10, pady=10)
 
-    cancel_button = tk.Button(confirmation_dialog, text="Cancel", command=cancel_search)
+    cancel_button = ttk.Button(confirmation_dialog, text="Cancel", command=cancel_search, style='Modern.TButton')
     cancel_button.pack(side=tk.RIGHT, padx=10, pady=10)
 
 def update_window_size(event=None, width_percent=None, height_percent=None):
@@ -143,6 +165,12 @@ def update_window_size(event=None, width_percent=None, height_percent=None):
 
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
+
+    # Check if show_time is False in settings
+    if "show_time" in settings and settings["show_time"] == "False":
+        window_width_percent = 10  # Set width to 10 if show_time is False
+        window_height_percent = 20  # Set height to 20 if show_time is False
+
     window_width = (screen_width * window_width_percent) // 100
     window_height = (screen_height * window_height_percent) // 100
 
@@ -161,12 +189,12 @@ def open_settings_window():
 
     width_label = tk.Label(settings_window, text="Window Width (% of screen):")
     width_label.grid(row=0, column=0, padx=10, pady=5)
-    width_entry = tk.Entry(settings_window)
+    width_entry = ttk.Entry(settings_window, font=("Segoe UI", 12), style='Modern.TEntry')
     width_entry.grid(row=0, column=1, padx=10, pady=5)
 
     height_label = tk.Label(settings_window, text="Window Height (% of screen):")
     height_label.grid(row=1, column=0, padx=10, pady=5)
-    height_entry = tk.Entry(settings_window)
+    height_entry = ttk.Entry(settings_window, font=("Segoe UI", 12), style='Modern.TEntry')
     height_entry.grid(row=1, column=1, padx=10, pady=5)
 
     language_label = tk.Label(settings_window, text="Language:")
@@ -175,22 +203,28 @@ def open_settings_window():
     language_var.set("English")  # Set default language
     language_menu = ttk.Combobox(settings_window, textvariable=language_var, values=["English", "German"])
     language_menu.grid(row=2, column=1, padx=10, pady=5)
-    language_menu.grid(row=2, column=1, padx=10, pady=5)
 
-    dark_mode_label = tk.Label(settings_window, text="Dark Mode:")
-    dark_mode_label.grid(row=3, column=0, padx=10, pady=5)
-    dark_mode_var = tk.BooleanVar(settings_window)
-    dark_mode_var.set(False)  # Set default value
-    dark_mode_checkbox = ttk.Checkbutton(settings_window, variable=dark_mode_var)
-    dark_mode_checkbox.grid(row=3, column=1, padx=10, pady=5)
+    style_label = tk.Label(settings_window, text="Style Mode:")
+    style_label.grid(row=3, column=0, padx=10, pady=5)
+    style_var = tk.StringVar(settings_window)
+    # Default value: system theme
+    style_menu = ttk.Combobox(settings_window, textvariable=style_var, values=["dark", "light", "system"])
+    style_menu.grid(row=3, column=1, padx=10, pady=5)
 
-    save_button = ttk.Button(settings_window, text="Save", command=lambda: save_settings(width_entry.get(), height_entry.get(), language_var.get(), dark_mode_var.get()), style='Modern.TButton')
-    save_button.grid(row=4, column=0, columnspan=2, pady=10)
+    show_time_label = tk.Label(settings_window, text="Show Time:")
+    show_time_label.grid(row=4, column=0, padx=10, pady=5)
+    show_time_var = tk.BooleanVar(settings_window)
+    # Default value: True
+    show_time_checkbox = ttk.Checkbutton(settings_window, variable=show_time_var)
+    show_time_checkbox.grid(row=4, column=1, padx=10, pady=5)
+
+    save_button = ttk.Button(settings_window, text="Save", command=lambda: save_settings(width_entry.get(), height_entry.get(), language_var.get(), style_var.get(), show_time_var.get()), style='Modern.TButton')
+    save_button.grid(row=5, column=0, columnspan=2, pady=10)
     save_button.bind("<Enter>", lambda _: save_button.config(cursor="hand2"))
     save_button.bind("<Leave>", lambda _: save_button.config(cursor=""))
 
     reset_button = ttk.Button(settings_window, text="Reset", command=reset_settings, style='Modern.TButton')
-    reset_button.grid(row=5, column=0, columnspan=2, pady=10)
+    reset_button.grid(row=6, column=0, columnspan=2, pady=10)
     reset_button.bind("<Enter>", lambda _: reset_button.config(cursor="X_cursor"))
     reset_button.bind("<Leave>", lambda _: reset_button.config(cursor=""))
 
@@ -202,10 +236,12 @@ def open_settings_window():
         height_entry.insert(0, settings["height"])
     if "language" in settings:
         language_var.set(settings["language"])
-    if "dark_mode" in settings:
-        dark_mode_var.set(settings["dark_mode"])
+    if "style_mode" in settings:
+        style_var.set(settings["style_mode"])
+    if "show_time" in settings:
+        show_time_var.set(settings["show_time"])
 
-def save_settings(width_percent, height_percent, language, dark_mode):
+def save_settings(width_percent, height_percent, language, style_mode, show_time):
     try:
         if width_percent:
             width_percent = int(width_percent)
@@ -226,7 +262,8 @@ def save_settings(width_percent, height_percent, language, dark_mode):
         if language:
             save_setting_to_file("language", language)
 
-        save_setting_to_file("dark_mode", dark_mode)
+        save_setting_to_file("style_mode", style_mode)
+        save_setting_to_file("show_time", show_time)
     except ValueError:
         messagebox.showerror("Error", "Please enter valid numeric values.")
 
@@ -271,9 +308,22 @@ def load_settings_from_file():
                     key, value = line.split(":")
                     settings[key.strip()] = value.strip()
     except FileNotFoundError:
-        pass
+        # Wenn die Datei nicht gefunden wird, füge die Standardwerte hinzu
+        settings["show_time"] = "True"
+        settings["style_mode"] = "system"  # Hier setzen wir den Standardwert für style_mode
+
+    # Falls die Einstellung show_time nicht vorhanden ist, füge sie hinzu und speichere sie
+    if "show_time" not in settings:
+        settings["show_time"] = "True"
+        save_setting_to_file("show_time", "True")
+
+    # Falls die Einstellung style_mode nicht vorhanden ist, füge sie hinzu und speichere sie
+    if "style_mode" not in settings:
+        settings["style_mode"] = "system"  # Hier setzen wir den Standardwert für style_mode
+        save_setting_to_file("style_mode", "system")
 
     return settings
+
 
 def update_time_label():
     current_time = datetime.now()
@@ -282,6 +332,8 @@ def update_time_label():
         formatted_time = current_time.strftime("%d.%m.%Y %H:%M:%S")
     else:
         formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    if "show_time" in settings and settings["show_time"] == "False":
+        formatted_time = ""
     time_label.config(text=formatted_time)
     root.after(1000, update_time_label)  # Update the time label every 1000 ms (1 second)
 
@@ -298,27 +350,87 @@ def close_application(icon, item):
 def help():
     help_url = "https://github.com/SchBenedikt/WinTalker"
     webbrowser.open(help_url)
+def detect_system_theme():
+    if platform.system() == "Windows":
+        registry_key = r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+        try:
+            import winreg
+            reg_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, registry_key)
+            value, _ = winreg.QueryValueEx(reg_key, "AppsUseLightTheme")
+            return "light" if value == 1 else "dark"
+        except FileNotFoundError:
+            # Falls der Registrierungsschlüssel nicht gefunden wird, nehme den dunklen Modus als Standard
+            return "dark"
+        except Exception as e:
+            print("Fehler beim Zugriff auf die Registrierung:", e)
+            return "dark"
+    elif platform.system() == "Darwin":
+        try:
+            result = os.popen('defaults read -g AppleInterfaceStyle').read()
+            if "Dark" in result:
+                return "dark"
+            else:
+                return "light"
+        except Exception as e:
+            print("Fehler beim Zugriff auf die macOS-Einstellungen:", e)
+            return "dark"
+    else:
+        # Fallback: Verwende den dunklen Modus für andere Betriebssysteme
+        return "dark"
+def apply_theme():
+    # Load settings from file
+    settings = load_settings_from_file()
+    
+    if "style_mode" in settings:
+        if settings["style_mode"] == "system":
+            # Überprüfe das Systemthema und wähle entsprechend den Dunkel- oder Hellmodus aus
+            system_theme = detect_system_theme()
+            if system_theme == "dark":
+                sv_ttk.set_theme("dark")
+            else:
+                sv_ttk.set_theme("light")
+        elif settings["style_mode"] == "dark":
+            sv_ttk.set_theme("dark")
+        else:
+            sv_ttk.set_theme("light")
+    else:
+        # Fallback: Verwende das Dunkelmodus-Theme
+        sv_ttk.set_theme("dark")
+
+    # Refresh the GUI to apply the theme changes
+    root.update_idletasks()
+
+
+def watch_settings():
+    while True:
+        apply_theme()
+        time.sleep(1)  # Überprüfe die Einstellungen alle 5 Sekunden
 
 if __name__ == "__main__":
     root = tk.Tk()
+
     root.title("Windows Talker")
     # Call the update_window_size function to set initial window size and make the window immovable and always on top
     update_window_size()
-    # Use 'clam' built-in theme
-    style = ttk.Style()
+    
+    # Apply theme based on settings
+    apply_theme()
 
     # Set window transparency
     root.attributes("-alpha", 1)  # Set transparency level (0.0 - fully transparent, 1.0 - fully opaque)
-    time_label = tk.Label(root, text="", font=("Segoe UI", 20))
-    time_label.pack()
-    # welcome_label = tk.Label(root, text="Welcome to the Windows Talker!", font=("Segoe UI", 16, "bold"))
-    # welcome_label.pack(pady=20)
-    # welcome_label.bind("<Button-1>", lambda e: webbrowser.open("github.com/SchBenedikt/WinTalker"))
-    # welcome_label.bind("<Enter>", lambda e: welcome_label.config(cursor="hand2"))
-    # welcome_label.bind("<Leave>", lambda e: welcome_label.config(cursor=""))
+    
+    # Start the settings watcher thread
+    settings_watcher_thread = threading.Thread(target=watch_settings)
+    settings_watcher_thread.daemon = True
+    settings_watcher_thread.start()
 
-    time_label = tk.Label(root, text="", font=("Segoe UI", 20))
-    time_label.pack()
+    # Load settings from file
+    settings = load_settings_from_file()
+    if "show_time" in settings and settings["show_time"] == "True":
+        new_label = tk.Label(root, text="")
+        new_label.pack()
+        time_label = tk.Label(root, text="", font=("Segoe UI", 20))
+        time_label.pack()
 
     # Add a new line here
     new_label = tk.Label(root, text="")
@@ -351,6 +463,7 @@ if __name__ == "__main__":
         pystray.MenuItem("Minimize", minimize_to_tray),
         pystray.MenuItem("Quit", close_application),
         pystray.MenuItem("Help", help)
+
     )
 
     tray_icon_thread = threading.Thread(target=tray_icon.run)
