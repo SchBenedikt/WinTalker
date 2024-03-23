@@ -1,0 +1,16 @@
+dunkelmodus: dark_mode.enable_dark_mode
+hellermodus: light_mode.enable_light_mode
+screenshot: screenshot.take_screenshot
+systeminfo: system_info.show_system_info
+herunterfahren: shutdown.shutdown_computer
+neustart: restart.restart_computer
+word: open_word.open_microsoft_word
+edge: open_msedge.open_msedge
+chrome: open_chrome.open_chrome
+teams: open_msteams.open_msteams
+powerpoint: open_powerpoint.open_microsoft_powerpoint
+excel: open_excel.open_microsoft_excel
+explorer: open_explorer.open_explorer
+aufgabenmanager: open_taskmanager.open_windows_taskmanager
+transparenz ein: enable_transparency.enable_transparency
+transparenz aus: disable_transparency.disable_transparency
